@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import {computed, ref} from 'vue'
-import {Status, next_status} from "@/ghosts/status"
+import {next_status, Status} from "@/ghosts/status"
 import {Evidence, EvidenceType} from "@/ghosts/evidence"
 import {Ghost} from "@/ghosts/ghost"
+import { Roulette } from 'vue3-roulette'
 
 function refresh_evidence(): Array<Evidence> {
   return [
@@ -59,22 +60,52 @@ function toggle_evidence(evidence: Evidence) {
 }
 
 function toggle_ghost(ghost: Ghost) {
-  ghost.status = next_status(ghost.status)
+  ghost.status = ghost.status === Status.Unselected
+    ? Status.Crossed
+    : Status.Unselected
 }
 
-const active_evidences: Array<Evidence> = computed(() =>
-  evidences.value.filter(evidence => evidence.status !== Status.Crossed)
+const selected_evidences = computed(() =>
+  evidences.value.filter(evidence => evidence.status === Status.Selected)
 )
 
-const crossed_evidences: Array<Evidence> = computed(() =>
+const crossed_evidences = computed(() =>
   evidences.value.filter(evidence => evidence.status === Status.Crossed)
 )
 
-const possible_ghosts: Array<Ghost> = computed(() =>
-  ghosts.value.filter(ghost => {
-    // Has to contain the selected evidences and NOT contain the crossed ones.
-  })
-)
+const possible_ghosts = computed(() => {
+  // Has to contain the selected evidences and NOT contain the crossed ones.
+  let temp = ghosts.value.filter(ghost =>
+    ghost.status !== Status.Crossed
+    && (
+      selected_evidences.value.length === 0
+      || selected_evidences.value.every(ev => ghost.evidences.includes(ev.type))
+    )
+    && !crossed_evidences.value.some(ev => ghost.evidences.includes(ev.type))
+  )
+
+  for (let i = 0; i < temp.length; ++i) {
+    temp[i] = {
+      id: i,
+      name: temp[i].name,
+      htmlContent: temp[i].name,
+      textColor: "",
+      background: ""
+    }
+  }
+
+  return temp
+})
+
+const wheel = ref(null)
+
+function launch_wheel() {
+  wheel.value.launchWheel()
+}
+
+function wheel_end_callback() {
+  console.log(wheel.value)
+}
 </script>
 
 <template>
@@ -85,14 +116,10 @@ const possible_ghosts: Array<Ghost> = computed(() =>
           <div class="col s12">
             <h4>Evidences</h4>
           </div>
-          <div class="col s12">
-            <div class="row">
-              <div class="col s12 m4 item" v-for="evidence in evidences" @click="() => toggle_evidence(evidence)"
-                :class="{selected: evidence.status === Status.Selected, crossed: evidence.status === Status.Crossed}"
-              >
-                <span>{{ evidence.type }}</span>
-              </div>
-            </div>
+          <div class="col s12 m4 item" v-for="evidence in evidences" @click="() => toggle_evidence(evidence)"
+            :class="{selected: evidence.status === Status.Selected, crossed: evidence.status === Status.Crossed}"
+          >
+            <span>{{ evidence.type }}</span>
           </div>
           <div class="col s12">
             <h4>Ghost Types</h4>
@@ -100,46 +127,15 @@ const possible_ghosts: Array<Ghost> = computed(() =>
           <div class="col s12 m4 item" v-for="ghost in ghosts" @click="() => toggle_ghost(ghost)"
             :class="{selected: ghost.status === Status.Selected, crossed: ghost.status === Status.Crossed}"
           >
-            <div class="d-flex">
-              <span class="h5">{{ ghost.name }}</span>
-            </div>
+            <span>{{ ghost.name }}</span>
           </div>
         </div>
       </div>
-      <div class="col s12 m6">
-         Roulette here
-         <p v-for="ghost in possible_ghosts">{{ ghost.name }}</p>
+      <div class="col s12 m6" style="padding-top: 2rem;">
+         <Roulette ref="wheel" :items="possible_ghosts" @click="launch_wheel" @wheel-end="wheel_end_callback"
+            :size="600" :result-variation="70" easing="bounce" indicator-position="right"
+         />
       </div>
     </div>
   </div>
 </template>
-
-<style>
-  .item {
-    cursor: pointer;
-    /* Prevent text selection */
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */
-  }
-
-  .item.selected > span {
-    border: 1px solid black;
-    border-radius: 50%;
-    padding: 2px;
-  }
-
-  .item.crossed {
-    text-decoration: line-through 3px;
-  }
-
-  .mx-0 {
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-
-  .px-0 {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
-</style>
