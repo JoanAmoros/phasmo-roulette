@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {ref} from 'vue'
-import {Status} from "@/ghosts/status"
+import {computed, ref} from 'vue'
+import {Status, next_status} from "@/ghosts/status"
 import {Evidence, EvidenceType} from "@/ghosts/evidence"
 import {Ghost} from "@/ghosts/ghost"
 
@@ -55,12 +55,26 @@ function refresh_all() {
 }
 
 function toggle_evidence(evidence: Evidence) {
-
+  evidence.status = next_status(evidence.status)
 }
 
 function toggle_ghost(ghost: Ghost) {
-
+  ghost.status = next_status(ghost.status)
 }
+
+const active_evidences: Array<Evidence> = computed(() =>
+  evidences.value.filter(evidence => evidence.status !== Status.Crossed)
+)
+
+const crossed_evidences: Array<Evidence> = computed(() =>
+  evidences.value.filter(evidence => evidence.status === Status.Crossed)
+)
+
+const possible_ghosts: Array<Ghost> = computed(() =>
+  ghosts.value.filter(ghost => {
+    // Has to contain the selected evidences and NOT contain the crossed ones.
+  })
+)
 </script>
 
 <template>
@@ -73,7 +87,7 @@ function toggle_ghost(ghost: Ghost) {
           </div>
           <div class="col s12">
             <div class="row">
-              <div class="col s12 m4" v-for="evidence in evidences" @click="() => toggle_evidence(ev)"
+              <div class="col s12 m4 item" v-for="evidence in evidences" @click="() => toggle_evidence(evidence)"
                 :class="{selected: evidence.status === Status.Selected, crossed: evidence.status === Status.Crossed}"
               >
                 <span>{{ evidence.type }}</span>
@@ -83,7 +97,7 @@ function toggle_ghost(ghost: Ghost) {
           <div class="col s12">
             <h4>Ghost Types</h4>
           </div>
-          <div class="col s12 m4" v-for="ghost in ghosts" @click="() => toggle_ghost(ghost)"
+          <div class="col s12 m4 item" v-for="ghost in ghosts" @click="() => toggle_ghost(ghost)"
             :class="{selected: ghost.status === Status.Selected, crossed: ghost.status === Status.Crossed}"
           >
             <div class="d-flex">
@@ -94,12 +108,31 @@ function toggle_ghost(ghost: Ghost) {
       </div>
       <div class="col s12 m6">
          Roulette here
+         <p v-for="ghost in possible_ghosts">{{ ghost.name }}</p>
       </div>
     </div>
   </div>
 </template>
 
 <style>
+  .item {
+    cursor: pointer;
+    /* Prevent text selection */
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+  }
+
+  .item.selected > span {
+    border: 1px solid black;
+    border-radius: 50%;
+    padding: 2px;
+  }
+
+  .item.crossed {
+    text-decoration: line-through 3px;
+  }
+
   .mx-0 {
     margin-left: 0 !important;
     margin-right: 0 !important;

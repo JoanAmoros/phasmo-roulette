@@ -14,7 +14,7 @@ export class Evidence {
     type: EvidenceType
     status: Status
     
-    constructor(type: EvidenceType, status: Status) {
+    constructor(type: EvidenceType, status: Status = Status.Unselected) {
         this.type = type
         this.status = status
     }

@@ -3,12 +3,12 @@ import {Status} from "./status";
 
 export class Ghost {
     name: String
-    evidence: Array<EvidenceType>
+    evidences: Array<EvidenceType>
     status: Status
     
-    constructor(name: String, evidence: Array<EvidenceType>, status: Status) {
+    constructor(name: String, evidences: Array<EvidenceType>, status: Status = Status.Unselected) {
         this.name = name
-        this.evidence = evidence
+        this.evidences = evidences
         this.status = status
     }
 }
